@@ -6,8 +6,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.screenlogin.RetrofitConfig
-import com.example.screenlogin.repository.LoginRequest
-import com.example.screenlogin.repository.LoginResponse
 import com.example.screenlogin.repository.RegisterRequest
 import com.example.screenlogin.repository.RegisterResponse
 import com.google.gson.Gson
@@ -55,10 +53,16 @@ class RegisterViewModel : ViewModel() {
                                 // Usa o Gson para extrair a mensagem de erro, caso o JSON tenha uma estrutura específica
                                 val gson = Gson()
                                 val errorJson = gson.fromJson(errorBody, ErrorResponse::class.java)
-                                errorJson.message ?: "Registred" // Ajuste conforme o formato da API
+                                errorJson.message ?: "Erro desconhecido ao registrar" // Ajuste conforme o formato da API
                             } catch (e: Exception) {
-                                "Email já cadastrado"
+                                Log.e("RegisterViewModel", "Erro ao analisar a resposta de erro: ${e.message}")
+                                when (response.code()) {
+                                    400 -> "Solicitação inválida. Verifique os dados enviados."
+                                    409 -> "Email já cadastrado. Tente outro."
+                                    else -> "Erro ao processar a solicitação. Tente novamente."
+                                }
                             }
+
                         } else {
                             "Credenciais inválidas."
                         }

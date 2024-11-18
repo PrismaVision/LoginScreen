@@ -11,7 +11,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.screenlogin.model.RegisterViewModel
 import com.example.screenlogin.repository.RegisterRequest
-import com.example.screenlogin.screens.loginScreen
+import com.example.screenlogin.screens.LoginScreen
 import com.example.screenlogin.screens.singUpScreen
 
 class MainActivity : ComponentActivity() {
@@ -31,7 +31,7 @@ class MainActivity : ComponentActivity() {
 
                 NavHost(navController = navController, startDestination = "Login") {
                     composable(route = "Login") {
-                        loginScreen(navController = navController, viewModel)
+                        LoginScreen(navController = navController, viewModel)
                     }
 
                     composable(route = "SingUp") {
