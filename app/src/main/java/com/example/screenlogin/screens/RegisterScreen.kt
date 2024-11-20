@@ -31,6 +31,7 @@ import androidx.compose.material3.CheckboxDefaults.colors
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -55,15 +56,16 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.screenlogin.R
+import com.example.screenlogin.model.RegisterStatus
 import com.example.screenlogin.model.RegisterViewModel
 import com.example.screenlogin.repository.RegisterRequest
-import com.example.screenlogin.model.RegisterViewModel.RegisterStatus
 
 @Composable
-fun singUpScreen(navController: NavController, viewModelRegister: RegisterViewModel) {
-    val registerState by viewModelRegister.registerState.observeAsState(RegisterViewModel.RegisterStatus.Loading)
+fun singUpScreen(navController: NavController, viewModelRegister: RegisterViewModel = viewModel()) {
+    val registerState by viewModelRegister.registerState.observeAsState(RegisterStatus.Loading)
     val context = LocalContext.current
 
     var nickName by remember { mutableStateOf("") }
@@ -249,7 +251,7 @@ fun singUpScreen(navController: NavController, viewModelRegister: RegisterViewMo
         if (registerState is RegisterViewModel.RegisterStatus.Loading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
         }
-        */
+
         LaunchedEffect(registerState) {
             when (registerState) {
                 is RegisterStatus.Success -> {
@@ -272,7 +274,32 @@ fun singUpScreen(navController: NavController, viewModelRegister: RegisterViewMo
                 }
                 else -> {}
             }
+        }*/
+        LaunchedEffect(registerState) {
+            when (registerState) {
+                is RegisterStatus.Success -> {
+                    Toast.makeText(context, "Registrado com Sucesso!", Toast.LENGTH_SHORT).show()
+                    // Limpa os campos
+                    nickName = ""
+                    email = ""
+                    password = ""
+
+                    // Navega para a tela de login
+                    navController.navigate("Login") {
+                        popUpTo("Register") { inclusive = true }
+                        }
+                }
+
+                is RegisterStatus.Error -> {
+                    val errorMessage = (registerState as RegisterStatus.Error).message
+                    Toast.makeText(context, "$errorMessage", Toast.LENGTH_SHORT).show()
+                }
+
+                else -> {}
+            }
         }
+
+
     }
 }
     }

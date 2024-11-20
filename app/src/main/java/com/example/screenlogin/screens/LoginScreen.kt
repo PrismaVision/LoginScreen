@@ -219,7 +219,7 @@ fun LoginScreen(
 
                     is LoginStatus.Error -> {
                         val errorMessage = (loginState as LoginStatus.Error).message
-                        Toast.makeText(context, "Erro: $errorMessage", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "$errorMessage", Toast.LENGTH_SHORT).show()
                     }
 
                     else -> {}
