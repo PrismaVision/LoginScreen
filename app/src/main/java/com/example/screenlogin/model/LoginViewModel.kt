@@ -11,54 +11,50 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class LoginViewModel : ViewModel() {
-    // Estado que mantém o status da requisição (Loading, Success, Error)
-    private val loginStatus = MutableLiveData<LoginStatus>(LoginStatus.Loading)
-    val loginState: LiveData<LoginStatus> = loginStatus
+class LoginViewModel : ViewModel() { //ViewModel() segue o padrão de arquitetura MVVM
+
+    private val loginStatus = MutableLiveData<LoginStatus>(LoginStatus.Loading) //Estado mutável
+    val loginState: LiveData<LoginStatus> = loginStatus //Permite que o usuário possa ver as alterações
 
 
     fun login(email: String, password: String) {
-        // Inicializa o status para 'Loading' enquanto faz a requisição
-        loginStatus.value = LoginStatus.Loading
 
-
-        // Verifique se os campos não estão vazios
+         // Verifique se os campos não estão vazios
         if (email.isBlank() || password.isBlank()) {
             loginStatus.value = LoginStatus.Error("Email e Senha são obrigatórios.")
             return
         }
 
         val loginRequest = LoginRequest(email, password)
-
         // Faz a requisição para o servidor
         RetrofitConfig.apiService.login(loginRequest).enqueue(object : Callback<LoginResponse> {
-            override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
+
+            private fun parseError(response: Response<*>): String { //O objeto Response<*> recebe uma resposta genérica da API e retorna uma String contendo a mensagem de erro
                 Log.d("LoginViewModel", "HTTP Status Code: ${response.code()}")
-                // Se a resposta for bem-sucedida (status 200)
-                if (response.isSuccessful) {
-                    val loginResponse = response.body()
-                    if (loginResponse != null && loginResponse.token != null) {
-                        val token = loginResponse.token
-                        loginStatus.value = LoginStatus.Success(token)
-                    } else {
-                        loginStatus.value = LoginStatus.Error("Resposta inválida da API: Token não encontrado.")
-                    }
-                } else {// Tenta capturar a mensagem de erro do corpo da resposta
-                val errorBody = response.errorBody()?.string()
-                val errorMessage = if (!errorBody.isNullOrEmpty()) {
+                val errorBody = response.errorBody()?.string() //errorBody tenta acessar a resposta de erro e converte para String se n for nulo
+                return if (!errorBody.isNullOrEmpty()) { //Verifica se a resposta é vazio ou nulo
                     try {
-                        // Usa o Gson para extrair a mensagem de erro, caso o JSON tenha uma estrutura específica
-                        val gson = Gson()
-                        val errorJson = gson.fromJson(errorBody, ErrorResponse::class.java)
-                        errorJson.message ?: "Erro API." // Ajuste conforme o formato da API
+                        val errorJson = Gson().fromJson(errorBody, ErrorResponse::class.java)//Utiliza o Gson para converter o corpo da resposta de erro (errorBody) em um objeto da classe ErrorResponse.
+                        errorJson.message ?: "Erro desconhecido da API" //Se o campo message do objeto ErrorResponse estiver preenchido, retorna a mensagem. Caso contrário, retorna a string padrão "Erro desconhecido.".
                     } catch (e: Exception) {
-                        "Catch."
+                        "JSON inválido" //Caso ocorra uma falha no parsing (exemplo: o JSON está malformado), retorna a string padrão "Erro desconhecido.".
                     }
                 } else {
-                    "Credenciais inválidas."
+                    "Erro API!" //Se o corpo do erro for nulo ou vazio, retorna "Erro desconhecido.".
                 }
-                loginStatus.value = LoginStatus.Error(errorMessage)
             }
+
+            override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
+                if (response.isSuccessful) { //Verifica se a resposta da API possui status HTTP indicando sucesso (exemplo: 200 OK).
+                    response.body()?.let { loginResponse -> //Tenta acessar o corpo da resposta com body(). Se não for nulo, utiliza a função let para processar o objeto loginResponse.
+                        loginStatus.value = LoginStatus.Success(loginResponse.token) //Define o estado do login como Success e passa o token retornado pela API.
+                    } ?: run {
+                        loginStatus.value = LoginStatus.Error("Resposta inválida da API.") //Caso o corpo da resposta (body) seja nulo, executa o bloco run e define o estado do login como Error, com uma mensagem indicando erro de resposta da API.
+                    }
+                } else {
+                    loginStatus.value = LoginStatus.Error(parseError(response)) //Se a resposta não for bem-sucedida (exemplo: 401 Unauthorized), chama o método parseError para obter a mensagem de erro detalhada.
+                                                                                //Define o estado do login como Error com a mensagem retornada.
+                }
             }
 
             override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
